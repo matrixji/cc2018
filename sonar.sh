@@ -9,5 +9,5 @@ sonar-scanner \
   -Dsonar.sources=. \
   -Dsonar.cfamily.build-wrapper-output=bw-output \
   -Dsonar.host.url=https://sonarcloud.io \
-  -Dsonar.login=d9cb21898d743e04a394a8fd45098f7c7d846c1c
-
+  -Dsonar.login=28d1526d0cc974845b90d1825d4325604d5147a9 \
+  -Dhttp.proxyHost=10.144.1.10 -Dhttp.proxyPort=8080 -X

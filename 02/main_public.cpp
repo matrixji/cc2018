@@ -11,9 +11,60 @@
 #include <set>
 #include <vector>
 
-#include "../common/DataLoader.hpp"
+// data loader for code contest
+class DataLoader
+{
+public:
+    explicit DataLoader(const std::string& filename) : fs(filename)
+    {
+    }
 
-#include "../common/helper.hpp"
+    // load content from file, callback on each line content
+    // ignore \r for windows
+    void load(const std::function<void(const std::string& line)>& cb)
+    {
+        for(std::string line; std::getline(fs, line);)
+        {
+            if(line.length() > 0 && *line.rbegin() == '\r')
+            {
+                *line.rbegin() = '\0';
+            }
+            cb(line);
+        }
+    }
+
+    // load with delimiter, cb on each line, all words in vector.
+    void load(const char delimiter, const std::function<void(std::vector<std::string>&)>& cb)
+    {
+        load([&delimiter, &cb](const std::string& line) {
+            std::vector<std::string> ret;
+            std::istringstream iss(line);
+            for(std::string token; std::getline(iss, token, delimiter);)
+            {
+                ret.push_back(std::move(token));
+            }
+            cb(ret);
+        });
+    }
+
+private:
+    std::ifstream fs;
+};
+
+auto& console()
+{
+    return std::cout; // NOSONAR
+}
+
+// all code contest have one file input parameter
+void paramCheck(int argc, const char* argv[])
+{
+    if(argc <= 1)
+    {
+        console() << "usage: " << std::string(argv[0]) << " <input>" << std::endl;
+        std::exit(-1);
+    }
+}
 
 class MaxPathSolution
 {

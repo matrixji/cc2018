@@ -11,6 +11,9 @@
 #include <set>
 #include <vector>
 
+namespace code
+{
+
 // data loader for code contest
 class DataLoader
 {
@@ -54,17 +57,14 @@ private:
     std::ifstream fs;
 };
 
-auto& console()
-{
-    return std::cout; // NOSONAR
-}
+#define CONSOLE std::cout // NOSONAR
 
 // all code contest have one file input parameter
 void paramCheck(int argc, const char* argv[])
 {
     if(argc <= 1)
     {
-        console() << "usage: " << std::string(argv[0]) << " <input>" << std::endl;
+        CONSOLE << "usage: " << std::string(argv[0]) << " <input>" << std::endl;
         std::exit(-1);
     }
 }
@@ -219,12 +219,13 @@ private:
     // init internal data
     void init()
     {
+        constexpr uint64_t singleNumberLimit = 10;
         for(const auto& str : {strA, strB, strR})
         {
             auto it = options.emplace(str.front(), std::set<uint64_t>{});
             if(it.second)
             {
-                for(uint64_t i = 1; i < 10; ++i)
+                for(uint64_t i = 1; i < singleNumberLimit; ++i)
                 {
                     it.first->second.emplace(i);
                 }
@@ -237,7 +238,7 @@ private:
                 auto it = options.emplace(ch, std::set<uint64_t>{});
                 if(it.second)
                 {
-                    for(uint64_t i = 0; i < 10; ++i)
+                    for(uint64_t i = 0; i < singleNumberLimit; ++i)
                     {
                         it.first->second.emplace(i);
                     }
@@ -294,7 +295,7 @@ void handle(const std::vector<std::string>& words)
                     {
                         if(nextExp->a() * nextExp->b() == nextExp->r() && nextExp->isFinished())
                         {
-                            console() << nextExp->a() << " * " << nextExp->b() << " = " << nextExp->r() << std::endl;
+                            CONSOLE << nextExp->a() << " * " << nextExp->b() << " = " << nextExp->r() << std::endl;
                         }
                         else
                         {
@@ -308,14 +309,15 @@ void handle(const std::vector<std::string>& words)
         }
     }
 }
+}
 
 int main(int argc, const char* argv[])
 {
-    paramCheck(argc, argv);
+    code::paramCheck(argc, argv);
 
     const std::string filename(argv[1]);
-    auto loader = std::make_unique<DataLoader>(filename);
-    loader->load(std::string("([A-Z]+) \\* ([A-Z]+) = ([A-Z]+)\n?"), [](const std::vector<std::string>& words) { handle(words); });
+    auto loader = std::make_unique<code::DataLoader>(filename);
+    loader->load(std::string("([A-Z]+) \\* ([A-Z]+) = ([A-Z]+)\n?"), [](const std::vector<std::string>& words) { code::handle(words); });
 
     return 0;
 }

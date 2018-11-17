@@ -6,7 +6,7 @@ public:
     {
     }
 
-    // filter begin: 01 02
+    // filter begin: 01 02 04
     // load content from file, callback on each line content
     // ignore \r for windows
     void load(const std::function<void(const std::string& line)>& cb)
@@ -22,7 +22,7 @@ public:
     }
     // filter end
 
-    // filter begin: 02
+    // filter begin: 02 04
     // load with delimiter, cb on each line, all words in vector.
     void load(const char delimiter, const std::function<void(std::vector<std::string>&)>& cb)
     {

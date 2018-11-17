@@ -11,6 +11,9 @@
 #include <set>
 #include <vector>
 
+namespace code
+{
+
 // data loader for code contest
 class DataLoader
 {
@@ -51,17 +54,14 @@ private:
     std::ifstream fs;
 };
 
-auto& console()
-{
-    return std::cout; // NOSONAR
-}
+#define CONSOLE std::cout // NOSONAR
 
 // all code contest have one file input parameter
 void paramCheck(int argc, const char* argv[])
 {
     if(argc <= 1)
     {
-        console() << "usage: " << std::string(argv[0]) << " <input>" << std::endl;
+        CONSOLE << "usage: " << std::string(argv[0]) << " <input>" << std::endl;
         std::exit(-1);
     }
 }
@@ -76,7 +76,8 @@ public:
     void put(uint32_t num)
     {
         line.at(pos) = num + std::max(line.at(pos), line.at(pos - 1));
-        if(++pos > width)
+        ++pos;
+        if(pos > width)
         {
             pos = 1;
         }
@@ -107,15 +108,16 @@ void handle(const std::vector<std::string>& words, std::unique_ptr<MaxPathSoluti
         }
     }
 }
+}
 
 int main(int argc, const char* argv[])
 {
-    paramCheck(argc, argv);
+    code::paramCheck(argc, argv);
 
     const std::string filename(argv[1]);
-    auto loader = std::make_unique<DataLoader>(filename);
-    std::unique_ptr<MaxPathSolution> solution{nullptr};
+    auto loader = std::make_unique<code::DataLoader>(filename);
+    std::unique_ptr<code::MaxPathSolution> solution{nullptr};
     loader->load(',', [&solution](const std::vector<std::string>& words) { handle(words, solution); });
-    console() << solution->value() << std::endl;
+    CONSOLE << solution->value() << std::endl;
     return 0;
 }

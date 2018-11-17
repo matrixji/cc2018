@@ -7,6 +7,7 @@ main_public.cpp: main.cpp ../common/DataLoader.hpp ../common/helper.hpp
 
 %.o: %.cpp
 	clang-format -i $^ --
+	sed 's#^} // namespace .*#}#' -i $^
 	g++ -std=c++14 -Wall -g -c $^ -o $@
 
 test: test_main

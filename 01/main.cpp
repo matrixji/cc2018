@@ -11,6 +11,9 @@
 #include <set>
 #include <vector>
 
+namespace code
+{
+
 #include "../common/DataLoader.hpp"
 
 #include "../common/helper.hpp"
@@ -165,12 +168,13 @@ private:
     // init internal data
     void init()
     {
+        constexpr uint64_t singleNumberLimit = 10;
         for(const auto& str : {strA, strB, strR})
         {
             auto it = options.emplace(str.front(), std::set<uint64_t>{});
             if(it.second)
             {
-                for(uint64_t i = 1; i < 10; ++i)
+                for(uint64_t i = 1; i < singleNumberLimit; ++i)
                 {
                     it.first->second.emplace(i);
                 }
@@ -183,7 +187,7 @@ private:
                 auto it = options.emplace(ch, std::set<uint64_t>{});
                 if(it.second)
                 {
-                    for(uint64_t i = 0; i < 10; ++i)
+                    for(uint64_t i = 0; i < singleNumberLimit; ++i)
                     {
                         it.first->second.emplace(i);
                     }
@@ -216,12 +220,6 @@ private:
     CharToNumberOptions options;
 };
 
-// filter start
-void ut()
-{
-}
-// filter end
-
 void handle(const std::vector<std::string>& words)
 {
     const size_t PatternCount = 4;
@@ -246,7 +244,7 @@ void handle(const std::vector<std::string>& words)
                     {
                         if(nextExp->a() * nextExp->b() == nextExp->r() && nextExp->isFinished())
                         {
-                            console() << nextExp->a() << " * " << nextExp->b() << " = " << nextExp->r() << std::endl;
+                            CONSOLE << nextExp->a() << " * " << nextExp->b() << " = " << nextExp->r() << std::endl;
                         }
                         else
                         {
@@ -260,14 +258,15 @@ void handle(const std::vector<std::string>& words)
         }
     }
 }
+} // namespace code
 
 int main(int argc, const char* argv[])
 {
-    paramCheck(argc, argv);
+    code::paramCheck(argc, argv);
 
     const std::string filename(argv[1]);
-    auto loader = std::make_unique<DataLoader>(filename);
-    loader->load(std::string("([A-Z]+) \\* ([A-Z]+) = ([A-Z]+)\n?"), [](const std::vector<std::string>& words) { handle(words); });
+    auto loader = std::make_unique<code::DataLoader>(filename);
+    loader->load(std::string("([A-Z]+) \\* ([A-Z]+) = ([A-Z]+)\n?"), [](const std::vector<std::string>& words) { code::handle(words); });
 
     return 0;
 }

@@ -1,15 +1,12 @@
 
-auto& console()
-{
-    return std::cout; // NOSONAR
-}
+#define CONSOLE std::cout // NOSONAR
 
 // all code contest have one file input parameter
 void paramCheck(int argc, const char* argv[])
 {
     if(argc <= 1)
     {
-        console() << "usage: " << std::string(argv[0]) << " <input>" << std::endl;
+        CONSOLE << "usage: " << std::string(argv[0]) << " <input>" << std::endl;
         std::exit(-1);
     }
 

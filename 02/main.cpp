@@ -1,5 +1,5 @@
 // code contest 02
-#pragma GCC optimize("-O2")
+#pragma GCC optimize("-O3")
 
 #include <cstdlib>
 #include <fstream>
@@ -25,13 +25,32 @@ public:
     {
     }
 
-    void put(uint32_t num)
+    void inline input(std::stringstream& ss)
     {
-        line.at(pos) = num + std::max(line.at(pos), line.at(pos - 1));
-        ++pos;
-        if(pos > width)
+        uint32_t num = 0;
+        bool prevIsNum = false;
+        for(char ch; ss.get(ch);)
         {
-            pos = 1;
+            if(ch >= '0' && ch <= '9')
+            {
+                num *= 10;
+                num += static_cast<uint32_t>(ch - '0');
+                prevIsNum = true;
+            }
+            else if(prevIsNum)
+            {
+                line[pos] = num + std::max(line[pos], line[pos - 1]);
+                ++pos;
+                if(pos > width)
+                {
+                    pos = 1;
+                }
+                num = 0;
+                prevIsNum = false;
+            }
+            else
+            {
+            }
         }
     }
     uint32_t value()
@@ -44,32 +63,18 @@ private:
     size_t pos;
     size_t width;
 };
-
-void handle(const std::vector<std::string>& words, std::unique_ptr<MaxPathSolution>& solution)
-{
-    if(!solution)
-    {
-        // first line, create solution with m count.
-        solution = std::make_unique<MaxPathSolution>(static_cast<size_t>(::strtoul(words.front().c_str(), nullptr, 10)));
-    }
-    else
-    {
-        for(const auto& word : words)
-        {
-            solution->put(static_cast<size_t>(::strtoul(word.c_str(), nullptr, 10)));
-        }
-    }
-}
 } // namespace code
 
 int main(int argc, const char* argv[])
 {
-    code::paramCheck(argc, argv);
-
+    (void)argc;
     const std::string filename(argv[1]);
-    auto loader = std::make_unique<code::DataLoader>(filename);
-    std::unique_ptr<code::MaxPathSolution> solution{nullptr};
-    loader->load(',', [&solution](const std::vector<std::string>& words) { handle(words, solution); });
-    CONSOLE << solution->value() << std::endl;
+    code::DataLoader loader(filename);
+    std::stringstream paylaod;
+    auto numM = loader.getM();
+    loader.read(paylaod);
+    code::MaxPathSolution solution{numM};
+    solution.input(paylaod);
+    CONSOLE << solution.value() << std::endl;
     return 0;
 }

@@ -6,7 +6,32 @@ public:
     {
     }
 
-    // filter begin: 01 02 04
+    // filter begin: 03
+    void skipLine()
+    {
+        std::string token;
+        std::getline(fs, token);
+    }
+    // filter end
+
+    // filter begin: 02
+    size_t getM()
+    {
+        size_t ret = 0;
+        std::string token;
+        std::getline(fs, token, ',');
+        ret = static_cast<size_t>(std::strtoul(token.c_str(), nullptr, 10));
+        std::getline(fs, token);
+        return ret;
+    }
+
+    void read(std::stringstream& stream)
+    {
+        stream << fs.rdbuf();
+    }
+    // filter end
+
+    // filter begin: 01 03 04
     // load content from file, callback on each line content
     // ignore \r for windows
     void load(const std::function<void(const std::string& line)>& cb)
@@ -22,7 +47,7 @@ public:
     }
     // filter end
 
-    // filter begin: 02 04
+    // filter begin: 03 04
     // load with delimiter, cb on each line, all words in vector.
     void load(const char delimiter, const std::function<void(std::vector<std::string>&)>& cb)
     {

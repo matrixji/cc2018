@@ -168,7 +168,7 @@ private:
     // init internal data
     void init()
     {
-        constexpr uint64_t singleNumberLimit = 10;
+        const uint64_t singleNumberLimit = 10;
         for(const auto& str : {strA, strB, strR})
         {
             auto it = options.emplace(str.front(), std::set<uint64_t>{});

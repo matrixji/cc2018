@@ -1,5 +1,5 @@
 // code contest 02
-#pragma GCC optimize("-O2")
+#pragma GCC optimize("-O3")
 
 #include <cstdlib>
 #include <fstream>
@@ -22,32 +22,19 @@ public:
     {
     }
 
-    // load content from file, callback on each line content
-    // ignore \r for windows
-    void load(const std::function<void(const std::string& line)>& cb)
+    size_t getM()
     {
-        for(std::string line; std::getline(fs, line);)
-        {
-            if(line.length() > 0 && *line.rbegin() == '\r')
-            {
-                *line.rbegin() = '\0';
-            }
-            cb(line);
-        }
+        size_t ret = 0;
+        std::string token;
+        std::getline(fs, token, ',');
+        ret = static_cast<size_t>(std::strtoul(token.c_str(), nullptr, 10));
+        std::getline(fs, token);
+        return ret;
     }
 
-    // load with delimiter, cb on each line, all words in vector.
-    void load(const char delimiter, const std::function<void(std::vector<std::string>&)>& cb)
+    void read(std::stringstream& stream)
     {
-        load([&delimiter, &cb](const std::string& line) {
-            std::vector<std::string> ret;
-            std::istringstream iss(line);
-            for(std::string token; std::getline(iss, token, delimiter);)
-            {
-                ret.push_back(std::move(token));
-            }
-            cb(ret);
-        });
+        stream << fs.rdbuf();
     }
 
 private:
@@ -56,16 +43,6 @@ private:
 
 #define CONSOLE std::cout // NOSONAR
 
-// all code contest have one file input parameter
-void paramCheck(int argc, const char* argv[])
-{
-    if(argc <= 1)
-    {
-        CONSOLE << "usage: " << std::string(argv[0]) << " <input>" << std::endl;
-        std::exit(-1);
-    }
-}
-
 class MaxPathSolution
 {
 public:
@@ -73,13 +50,32 @@ public:
     {
     }
 
-    void put(uint32_t num)
+    void inline input(std::stringstream& ss)
     {
-        line.at(pos) = num + std::max(line.at(pos), line.at(pos - 1));
-        ++pos;
-        if(pos > width)
+        uint32_t num = 0;
+        bool prevIsNum = false;
+        for(char ch; ss.get(ch);)
         {
-            pos = 1;
+            if(ch >= '0' && ch <= '9')
+            {
+                num *= 10;
+                num += static_cast<uint32_t>(ch - '0');
+                prevIsNum = true;
+            }
+            else if(prevIsNum)
+            {
+                line[pos] = num + std::max(line[pos], line[pos - 1]);
+                ++pos;
+                if(pos > width)
+                {
+                    pos = 1;
+                }
+                num = 0;
+                prevIsNum = false;
+            }
+            else
+            {
+            }
         }
     }
     uint32_t value()
@@ -92,32 +88,18 @@ private:
     size_t pos;
     size_t width;
 };
-
-void handle(const std::vector<std::string>& words, std::unique_ptr<MaxPathSolution>& solution)
-{
-    if(!solution)
-    {
-        // first line, create solution with m count.
-        solution = std::make_unique<MaxPathSolution>(static_cast<size_t>(::strtoul(words.front().c_str(), nullptr, 10)));
-    }
-    else
-    {
-        for(const auto& word : words)
-        {
-            solution->put(static_cast<size_t>(::strtoul(word.c_str(), nullptr, 10)));
-        }
-    }
-}
 }
 
 int main(int argc, const char* argv[])
 {
-    code::paramCheck(argc, argv);
-
+    (void)argc;
     const std::string filename(argv[1]);
-    auto loader = std::make_unique<code::DataLoader>(filename);
-    std::unique_ptr<code::MaxPathSolution> solution{nullptr};
-    loader->load(',', [&solution](const std::vector<std::string>& words) { handle(words, solution); });
-    CONSOLE << solution->value() << std::endl;
+    code::DataLoader loader(filename);
+    std::stringstream paylaod;
+    auto numM = loader.getM();
+    loader.read(paylaod);
+    code::MaxPathSolution solution{numM};
+    solution.input(paylaod);
+    CONSOLE << solution.value() << std::endl;
     return 0;
 }

@@ -52,6 +52,10 @@ public:
                 }
             }
         }
+        if(prevIsNum)
+        {
+            line[pos] = num + std::max(line[pos], line[pos - 1]);
+        }
     }
     uint32_t value()
     {

@@ -62,19 +62,19 @@ public:
                 num += static_cast<uint32_t>(ch - '0');
                 prevIsNum = true;
             }
-            else if(prevIsNum)
-            {
-                line[pos] = num + std::max(line[pos], line[pos - 1]);
-                ++pos;
-                if(pos > width)
-                {
-                    pos = 1;
-                }
-                num = 0;
-                prevIsNum = false;
-            }
             else
             {
+                if(prevIsNum)
+                {
+                    line[pos] = num + std::max(line[pos], line[pos - 1]);
+                    ++pos;
+                    if(pos > width)
+                    {
+                        pos = 1;
+                    }
+                    num = 0;
+                    prevIsNum = false;
+                }
             }
         }
     }

@@ -6,9 +6,8 @@
 #include <functional>
 #include <iostream>
 #include <list>
-#include <map>
-#include <set>
 #include <sstream>
+#include <unordered_map>
 #include <vector>
 
 namespace code
@@ -23,7 +22,7 @@ class Solution
     // using bit to store test line combinations
     // as total <=20, 32bit is ok
     // 0x0003 -> means test line: 1 & 2 are selected.
-    using Combinations = std::map<uint32_t, size_t>;
+    using Combinations = std::unordered_map<uint32_t, size_t>;
 
 public:
     void load(const std::vector<std::string>& words)

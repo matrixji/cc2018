@@ -57,14 +57,12 @@ private:
     std::ifstream fs;
 };
 
-#define CONSOLE std::cout // NOSONAR
-
 // all code contest have one file input parameter
 void paramCheck(int argc, const char* argv[])
 {
     if(argc <= 1)
     {
-        CONSOLE << "usage: " << std::string(argv[0]) << " <input>" << std::endl;
+        std::fprintf(stdout, "usage %s <input>", argv[0]);
         std::exit(-1);
     }
 }
@@ -295,7 +293,7 @@ void handle(const std::vector<std::string>& words)
                     {
                         if(nextExp->a() * nextExp->b() == nextExp->r() && nextExp->isFinished())
                         {
-                            CONSOLE << nextExp->a() << " * " << nextExp->b() << " = " << nextExp->r() << std::endl;
+                            std::fprintf(stdout, "%lu * %lu = %lu\n", nextExp->a(), nextExp->b(), nextExp->r());
                         }
                         else
                         {

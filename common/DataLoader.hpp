@@ -31,7 +31,16 @@ public:
     }
     // filter end
 
-    // filter begin: 01 03 04
+    // filter begin: 04
+    size_t getCount()
+    {
+        std::string token;
+        std::getline(fs, token);
+        return static_cast<size_t>(std::strtoul(token.c_str(), nullptr, 10));
+    }
+    // filter end
+
+    // filter begin: 01 03 04 05
     // load content from file, callback on each line content
     // ignore \r for windows
     void load(const std::function<void(const std::string& line)>& cb)
@@ -47,7 +56,7 @@ public:
     }
     // filter end
 
-    // filter begin: 03 04
+    // filter begin: 03 04 05
     // load with delimiter, cb on each line, all words in vector.
     void load(const char delimiter, const std::function<void(std::vector<std::string>&)>& cb)
     {

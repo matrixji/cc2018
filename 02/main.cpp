@@ -79,6 +79,6 @@ int main(int argc, const char* argv[])
     loader.read(paylaod);
     code::MaxPathSolution solution{numM};
     solution.input(paylaod);
-    CONSOLE << solution.value() << std::endl;
+    std::fprintf(stdout, "%u\n", solution.value());
     return 0;
 }

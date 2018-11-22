@@ -244,7 +244,7 @@ void handle(const std::vector<std::string>& words)
                     {
                         if(nextExp->a() * nextExp->b() == nextExp->r() && nextExp->isFinished())
                         {
-                            CONSOLE << nextExp->a() << " * " << nextExp->b() << " = " << nextExp->r() << std::endl;
+                            std::fprintf(stdout, "%lu * %lu = %lu\n", nextExp->a(), nextExp->b(), nextExp->r());
                         }
                         else
                         {

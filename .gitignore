@@ -37,3 +37,6 @@ xx
 bw-output
 *.png
 *.dot
+core.*
+*_output.txt
+test_main

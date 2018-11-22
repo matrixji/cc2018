@@ -26,8 +26,6 @@ public:
     {
     }
 
-
-
     size_t getCount()
     {
         std::string token;
@@ -63,11 +61,9 @@ public:
         });
     }
 
-
 private:
     std::ifstream fs;
 };
-
 
 // all code contest have one file input parameter
 void paramCheck(int argc, const char* argv[])
@@ -291,7 +287,7 @@ private:
     size_t tIndex;
     size_t valueSum{0};
 };
-} // namespace code
+}
 
 int main(int argc, const char* argv[])
 {

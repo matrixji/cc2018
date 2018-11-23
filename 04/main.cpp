@@ -7,9 +7,11 @@
 #include <fstream>
 #include <functional>
 #include <iostream>
+#include <list>
 #include <set>
 #include <sstream>
 #include <string>
+#include <unordered_map>
 #include <vector>
 
 namespace code
@@ -26,12 +28,7 @@ class Solution
 {
 public:
     explicit Solution(size_t n)
-    : nodeCount{n + extraNodeCount}
-    , linkLimit{nodeCount * nodeCount}
-    , linkHeads(nodeCount, invalid)
-    , deps(nodeCount, invalid)
-    , links(linkLimit, {0, 0, 0, 0})
-    , tIndex{n + 1}
+    : nodeCount{n + extraNodeCount}, linkLimit{nodeCount * nodeCount}, linkHeads(nodeCount, invalid), links(linkLimit, {0, 0, 0, 0}), tIndex{n + 1}
     {
     }
 
@@ -102,30 +99,25 @@ private:
 
     bool search()
     {
-        std::vector<size_t> queue(nodeCount, invalid);
-        size_t front{0};
-        size_t back{1};
+        std::list<size_t> queue{sIndex};
 
-        std::fill(deps.begin(), deps.end(), invalid);
-        queue[0] = sIndex;
-        deps[sIndex] = 0;
+        nodeDepthes.clear();
+        nodeDepthes.emplace(sIndex, 0);
 
-        while(front != back)
+        while(!queue.empty())
         {
-            auto tmpBegin = queue[front++];
-            front %= nodeCount;
-            auto index = linkHeads[tmpBegin];
+            auto tempBegin = queue.front();
+            queue.pop_front();
+            auto index = linkHeads[tempBegin];
             while(index != invalid)
             {
-                auto& link = links[index];
-                auto tmpEnd = link.end;
-                if(link.capacity > 0 && deps[tmpEnd] == invalid)
+                auto& lnk = links[index];
+                auto tempEnd = lnk.end;
+                if(lnk.capacity > 0 && nodeDepthes.find(tempEnd) == nodeDepthes.end())
                 {
-                    deps[tmpEnd] = deps[tmpBegin] + 1;
-                    queue[back] = tmpEnd;
-                    back++;
-                    back %= nodeCount;
-                    if(tmpEnd == tIndex)
+                    nodeDepthes.emplace(tempEnd, nodeDepthes[tempBegin] + 1);
+                    queue.emplace_back(tempEnd);
+                    if(tempEnd == tIndex)
                     {
                         return true;
                     }
@@ -140,11 +132,11 @@ private:
     {
         size_t result{0};
         size_t top{0};
-        std::vector<size_t> tmpHeads(linkHeads);
+        std::vector<size_t> tempHeads(linkHeads);
         std::vector<size_t> cache(nodeCount, 0);
         while(search())
         {
-            std::copy(linkHeads.begin(), linkHeads.end(), tmpHeads.begin());
+            std::copy(linkHeads.begin(), linkHeads.end(), tempHeads.begin());
             auto currIndex = sIndex;
             top = 0;
             while(true)
@@ -172,23 +164,23 @@ private:
                     currIndex = links[cache[tempTop]].begin;
                     top = tempTop;
                 }
-                auto index = tmpHeads[currIndex];
+                auto index = tempHeads[currIndex];
                 while(index != invalid)
                 {
-                    auto& link = links[index];
-                    if(link.capacity > 0 && deps[currIndex] + 1 == deps[link.end])
+                    auto& lnk = links[index];
+                    if(lnk.capacity > 0 && nodeDepthes[currIndex] + 1 == nodeDepthes[lnk.end])
                     {
                         break;
                     }
-                    index = link.next;
-                    tmpHeads[currIndex] = index;
+                    index = lnk.next;
+                    tempHeads[currIndex] = index;
                 }
-                if(tmpHeads[currIndex] == invalid)
+                if(tempHeads[currIndex] == invalid)
                 {
                     if(top != 0)
                     {
                         top--;
-                        deps[currIndex] = invalid;
+                        nodeDepthes[currIndex] = invalid;
                         currIndex = links[cache[top]].begin;
                     }
                     else
@@ -198,8 +190,8 @@ private:
                 }
                 else
                 {
-                    cache[top] = tmpHeads[currIndex];
-                    currIndex = links[tmpHeads[currIndex]].end;
+                    cache[top] = tempHeads[currIndex];
+                    currIndex = links[tempHeads[currIndex]].end;
                     top++;
                 }
             }
@@ -226,7 +218,7 @@ private:
     size_t linkLimit;
     size_t linkCount{0};
     std::vector<size_t> linkHeads;
-    std::vector<size_t> deps;
+    std::unordered_map<size_t, size_t> nodeDepthes;
     std::vector<Link> links;
 
     size_t tempIndex{0};

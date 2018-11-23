@@ -54,7 +54,7 @@ public:
         bool prevIsNum = false;
         for(char ch; ss.get(ch);)
         {
-            if(ch >= '0' && ch <= '9')
+            if(ch >= '0') // '\r', '\n', ' ', ',' are all < '0'
             {
                 num *= 10;
                 num += static_cast<uint32_t>(ch - '0');

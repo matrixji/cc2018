@@ -1,62 +1,44 @@
 // code contest 02
 #pragma GCC optimize("-O3")
 
+#include <cstdio>
 #include <cstdlib>
+#include <fcntl.h>
 #include <fstream>
-#include <functional>
 #include <iostream>
-#include <map>
-#include <memory>
-#include <regex>
-#include <set>
+#include <sys/stat.h>
+#include <sys/types.h>
+#include <unistd.h>
 #include <vector>
 
-namespace code
+#define BUFF_SIZE (4096)
+#define LEFT_MOVE1 (3)
+#define LEFT_MOVE2 (1)
+
+int main(int argc, const char* argv[])
 {
+    (void)argc;
+    char buff[BUFF_SIZE];
+    size_t m = 0;
+    register uint32_t num = 0;
+    register bool prevIsNum = false;
+    register size_t pos = 0;
+    std::vector<uint32_t> line;
 
-// data loader for code contest
-class DataLoader
-{
-public:
-    explicit DataLoader(const std::string& filename) : fs(filename)
+    auto fd = open(argv[1], O_RDONLY);
+    while(auto readBytes = ::read(fd, buff, BUFF_SIZE))
     {
-    }
-
-    size_t getM()
-    {
-        size_t ret = 0;
-        std::string token;
-        std::getline(fs, token, ',');
-        ret = static_cast<size_t>(std::strtoul(token.c_str(), nullptr, 10));
-        std::getline(fs, token);
-        return ret;
-    }
-
-    void read(std::stringstream& stream)
-    {
-        stream << fs.rdbuf();
-    }
-
-private:
-    std::ifstream fs;
-};
-
-class MaxPathSolution
-{
-public:
-    explicit MaxPathSolution(const size_t n) : line(n + 1, 0), pos(1), width(n)
-    {
-    }
-
-    void inline input(std::stringstream& ss)
-    {
-        uint32_t num = 0;
-        bool prevIsNum = false;
-        for(char ch; ss.get(ch);)
+        for(register int i = 0; i < readBytes; ++i)
         {
-            if(ch >= '0') // '\r', '\n', ' ', ',' are all < '0'
+            register auto ch = buff[i];
+            // '\r', '\n', ' ', ',' are all < '0'
+            if(ch >= '0')
             {
-                num *= 10;
+                if(num > 0)
+                {
+                    // num x= 10
+                    num = (num << LEFT_MOVE1) + (num << LEFT_MOVE2);
+                }
                 num += static_cast<uint32_t>(ch - '0');
                 prevIsNum = true;
             }
@@ -64,44 +46,49 @@ public:
             {
                 if(prevIsNum)
                 {
-                    line[pos] = num + std::max(line[pos], line[pos - 1]);
-                    ++pos;
-                    if(pos > width)
+                    if(pos == 0)
                     {
-                        pos = 1;
+                        if(m == 0)
+                        {
+                            // first num in first line
+                            m = num;
+                            line = std::vector<uint32_t>(m + 1, 0);
+                            num = 0;
+                            prevIsNum = false;
+                        }
+                        else
+                        {
+                            // second num in first line
+                            pos++;
+                            num = 0;
+                            prevIsNum = false;
+                        }
                     }
-                    num = 0;
-                    prevIsNum = false;
+                    else
+                    {
+                        // other nums
+                        line[pos] = num + std::max(line[pos], line[pos - 1]);
+                        if(pos == m)
+                        {
+                            pos = 1;
+                        }
+                        else
+                        {
+                            ++pos;
+                        }
+                        num = 0;
+                        prevIsNum = false;
+                    }
                 }
             }
         }
-        if(prevIsNum)
-        {
-            line[pos] = num + std::max(line[pos], line[pos - 1]);
-        }
     }
-    uint32_t value()
+    if(prevIsNum)
     {
-        return line.back();
+        line[pos] = num + std::max(line[pos], line[pos - 1]);
     }
-
-private:
-    std::vector<uint32_t> line;
-    size_t pos;
-    size_t width;
-};
-}
-
-int main(int argc, const char* argv[])
-{
-    (void)argc;
-    const std::string filename(argv[1]);
-    code::DataLoader loader(filename);
-    std::stringstream paylaod;
-    auto numM = loader.getM();
-    loader.read(paylaod);
-    code::MaxPathSolution solution{numM};
-    solution.input(paylaod);
-    std::fprintf(stdout, "%u\n", solution.value());
+    std::fprintf(stdout, "%u\n", line[m]);
+    std::fflush(stdout);
+    _exit(0);
     return 0;
 }

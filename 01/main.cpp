@@ -4,11 +4,9 @@
 #include <fstream>
 #include <functional>
 #include <iostream>
-#include <map>
-#include <memory>
-#include <numeric>
+#include <list>
 #include <regex>
-#include <set>
+#include <string>
 #include <vector>
 
 namespace code
@@ -18,246 +16,196 @@ namespace code
 
 #include "../common/helper.hpp"
 
-class Expression
+const uint8_t invalid = 0xff;
+const uint8_t atozNums = 26;
+const uint8_t firstChar = 'A';
+const uint8_t ten = 10;
+
+class Solution
 {
 public:
-    using CharToNumberMapping = std::map<char, uint64_t>;
-    using CharToNumberOptions = std::map<char, std::set<uint64_t>>;
-    Expression(std::string a, std::string b, std::string r) : strA(std::move(a)), strB(std::move(b)), strR(std::move(r)), resolvedDeepth(0)
+    class Cache
     {
-        init();
-    }
-
-    Expression(std::string a, std::string b, std::string r, size_t resolvedDeepth, CharToNumberMapping& resolved, CharToNumberOptions& options)
-    : strA(std::move(a)), strB(std::move(b)), strR(std::move(r)), resolvedDeepth(resolvedDeepth), resolved(resolved), options(options)
-    {
-    }
-
-    uint64_t a() const
-    {
-        return toNumber(strA);
-    }
-
-    uint64_t b() const
-    {
-        return toNumber(strB);
-    }
-
-    uint64_t r() const
-    {
-        return toNumber(strR);
-    }
-
-    // validate current resolve if possible to complete the expression
-    bool isValid() const
-    {
-        uint64_t numMod = 10;
-        for(size_t i = 1; i < resolvedDeepth; ++i)
+    public:
+        Cache()
         {
-            numMod *= 10;
+            mapping.fill(invalid);
+            nums.fill(0);
         }
-        return ((a() * b()) % numMod) == (r() % numMod);
-    }
+        size_t a{0};
+        size_t b{0};
+        size_t r{0};
+        std::array<uint8_t, atozNums> mapping;
+        std::array<uint8_t, ten> nums;
+        size_t depth{0};
+        size_t modNum{1};
+    };
 
-    bool isFinished() const
+    void processA(const std::string& strA, size_t lenA, const Cache& cache, std::vector<Cache>& newCaches)
     {
-        return options.empty();
-    }
-
-    // go with next
-    std::vector<std::unique_ptr<Expression>> next()
-    {
-        std::vector<std::unique_ptr<Expression>> ret;
-        resolvedDeepth++;
-        std::set<char> toResolved = nextResolved();
-
-        if(toResolved.empty() && (!isFinished()))
+        std::vector<Cache> newTempCaches{};
+        newCaches.emplace_back(cache);
+        for(const auto& cacheA : newCaches)
         {
-            // no new character to be resolved, to next
-            auto nextExp = std::make_unique<Expression>(strA, strB, strR, resolvedDeepth, resolved, options);
-            ret.emplace_back(std::move(nextExp));
-        }
-
-        std::set<std::map<uint64_t, char>> tempResolves = getTempResolves(toResolved);
-
-        for(auto& tempResolve : tempResolves)
-        {
-            // no new character to be resolved, to next
-            auto nextExp = std::make_unique<Expression>(strA, strB, strR, resolvedDeepth, resolved, options);
-            for(auto& pair : tempResolve)
+            if(cacheA.depth < lenA)
             {
-                nextExp->bind(pair.second, pair.first);
-            }
-            ret.emplace_back(std::move(nextExp));
-        }
-
-        return ret;
-    }
-
-private:
-    // bind ch -> num
-    void bind(const char ch, uint64_t num)
-    {
-        resolved.emplace(ch, num);
-        options.erase(ch);
-        std::for_each(options.begin(), options.end(), [&num](auto& opt) { opt.second.erase(num); });
-    }
-
-    // if ch resolved
-    bool isResolved(const char ch)
-    {
-        return resolved.find(ch) != resolved.end();
-    }
-
-    // get a temp ch -> num mapping for new chars to be resolved
-    std::set<std::map<uint64_t, char>> getTempResolves(const std::set<char>& toResolved)
-    {
-        std::set<std::map<uint64_t, char>> tempResolves;
-        for(const auto& ch : toResolved)
-        {
-            std::set<std::map<uint64_t, char>> tempResolvesLocal;
-            for(const auto& num : options.at(ch))
-            {
-
-                if(tempResolves.empty())
+                auto ch = strA[lenA - cacheA.depth - 1] - firstChar;
+                auto valA = cacheA.mapping[ch];
+                if(valA != invalid)
                 {
-                    std::map<uint64_t, char> newItem;
-                    newItem.emplace(num, ch);
-                    tempResolvesLocal.emplace(newItem);
+                    Cache newCacheA = cacheA;
+                    auto added = valA * cacheA.modNum;
+                    newCacheA.a += added;
+                    newTempCaches.emplace_back(newCacheA);
                 }
                 else
                 {
-                    for(const auto& resolve : tempResolves)
+                    size_t start = 0;
+                    if(lenA - cacheA.depth == 1)
                     {
-                        if(!isResolved(ch))
+                        start = 1;
+                    }
+                    for(size_t i = start; i < ten; ++i)
+                    {
+                        if(cacheA.nums[i] == 0)
                         {
-                            std::map<uint64_t, char> newItem = resolve;
-                            if(newItem.find(num) == newItem.end())
+                            Cache newCacheA = cacheA;
+                            newCacheA.mapping[ch] = i;
+                            newCacheA.nums[i] = 1;
+                            auto added = i * cacheA.modNum;
+                            newCacheA.a += added;
+                            newTempCaches.emplace_back(newCacheA);
+                        }
+                    }
+                }
+            }
+            else
+            {
+                newTempCaches.emplace_back(cacheA);
+            }
+        }
+        newCaches.swap(newTempCaches);
+    }
+
+    void processB(const std::string& strB, size_t lenB, std::vector<Cache>& newCaches)
+    {
+
+        std::vector<Cache> newTempCaches{};
+        for(const auto& cacheB : newCaches)
+        {
+            if(cacheB.depth < lenB)
+            {
+                auto ch = strB[lenB - cacheB.depth - 1] - firstChar;
+                auto valB = cacheB.mapping[ch];
+                if(valB != invalid)
+                {
+                    Cache newCacheB = cacheB;
+                    auto added = valB * cacheB.modNum;
+                    newCacheB.b += added;
+                    newTempCaches.emplace_back(newCacheB);
+                }
+                else
+                {
+                    size_t start = 0;
+                    if(lenB - cacheB.depth == 1)
+                    {
+                        start = 1;
+                    }
+                    for(size_t i = start; i < ten; ++i)
+                    {
+                        if(cacheB.nums[i] == 0)
+                        {
+                            Cache newCacheB = cacheB;
+                            newCacheB.mapping[ch] = i;
+                            newCacheB.nums[i] = 1;
+                            auto added = i * cacheB.modNum;
+                            newCacheB.b += added;
+                            newTempCaches.emplace_back(newCacheB);
+                        }
+                    }
+                }
+            }
+            else
+            {
+                newTempCaches.emplace_back(cacheB);
+            }
+        }
+        newCaches.swap(newTempCaches);
+    }
+
+    void process(const std::vector<std::string>& words)
+    {
+        auto it = words.begin();
+        ++it;
+        auto& strA = *it;
+        ++it;
+        auto& strB = *it;
+        ++it;
+        auto& strR = *it;
+        ++it;
+        auto lenA = strA.size();
+        auto lenB = strB.size();
+        auto lenR = strR.size();
+
+        std::list<Cache> caches{};
+        caches.emplace_back(Cache());
+
+        while(caches.size() > 0)
+        {
+            Cache cache = caches.front();
+            caches.pop_front();
+
+            std::vector<Cache> newCaches{};
+            processA(strA, lenA, cache, newCaches);
+            processB(strB, lenB, newCaches);
+            for(const auto& cacheR : newCaches)
+            {
+                if(cacheR.depth < lenR)
+                {
+                    auto ch = strR[lenR - cacheR.depth - 1] - firstChar;
+                    auto r = cacheR.a * cacheR.b % (cacheR.modNum * 10);
+                    auto rHead = r / cacheR.modNum;
+
+                    if(rHead != 0 || lenR - cacheR.depth > 1)
+                    {
+
+                        auto valR = cacheR.mapping[ch];
+                        if(valR == invalid && cacheR.nums[rHead] == 0)
+                        {
+                            auto newCacheR = cacheR;
+                            newCacheR.mapping[ch] = rHead;
+                            newCacheR.nums[rHead] = 1;
+                            newCacheR.r = r;
+                            newCacheR.depth++;
+                            newCacheR.modNum *= 10;
+                            caches.emplace_back(newCacheR);
+                        }
+                        else
+                        {
+                            if(cacheR.mapping[ch] == rHead)
                             {
-                                newItem.emplace(num, ch);
-                                tempResolvesLocal.emplace(newItem);
+                                auto newCacheR = cacheR;
+                                newCacheR.r = r;
+                                newCacheR.depth++;
+                                newCacheR.modNum *= 10;
+                                caches.emplace_back(newCacheR);
                             }
                         }
                     }
                 }
-            }
-            tempResolves = tempResolvesLocal;
-        }
-        return tempResolves;
-    }
-
-    // return next round tobe resolved chars
-    std::set<char> nextResolved()
-    {
-        std::set<char> ret;
-        for(const auto& str : {strA, strB, strR})
-        {
-            auto strLen = str.size();
-            if(strLen >= resolvedDeepth)
-            {
-                const auto ch = str.at(strLen - resolvedDeepth);
-                if(!isResolved(ch))
+                else
                 {
-                    ret.emplace(ch);
-                }
-            }
-        }
-        return std::move(ret);
-    }
-
-    // init internal data
-    void init()
-    {
-        const uint64_t singleNumberLimit = 10;
-        for(const auto& str : {strA, strB, strR})
-        {
-            auto it = options.emplace(str.front(), std::set<uint64_t>{});
-            if(it.second)
-            {
-                for(uint64_t i = 1; i < singleNumberLimit; ++i)
-                {
-                    it.first->second.emplace(i);
-                }
-            }
-        }
-        for(const auto& str : {strA, strB, strR})
-        {
-            for(const auto ch : str)
-            {
-                auto it = options.emplace(ch, std::set<uint64_t>{});
-                if(it.second)
-                {
-                    for(uint64_t i = 0; i < singleNumberLimit; ++i)
+                    if(cacheR.a * cacheR.b == cacheR.r)
                     {
-                        it.first->second.emplace(i);
+
+                        std::fprintf(stdout, "%lu * %lu = %lu\n", cacheR.a, cacheR.b, cacheR.r);
                     }
                 }
             }
         }
     }
-
-    uint64_t toNumber(const std::string& str) const
-    {
-        uint64_t ret = 0;
-        auto it = str.rbegin();
-        auto itResolve = resolved.find(*it);
-        uint64_t base = 1;
-        while(itResolve != resolved.end())
-        {
-            ret += itResolve->second * base;
-            base *= 10;
-            ++it;
-            itResolve = resolved.find(*it);
-        }
-        return ret;
-    }
-
-    const std::string strA;
-    const std::string strB;
-    const std::string strR;
-    size_t resolvedDeepth;
-    CharToNumberMapping resolved;
-    CharToNumberOptions options;
 };
 
-void handle(const std::vector<std::string>& words)
-{
-    const size_t PatternCount = 4;
-    const size_t PatternAPosition = 1;
-    const size_t PatternBPosition = 2;
-    const size_t PatternRPosition = 3;
-
-    if(words.size() >= PatternCount)
-    {
-        auto expInit = std::make_unique<Expression>(words[PatternAPosition], words[PatternBPosition], words[PatternRPosition]);
-        std::vector<std::unique_ptr<Expression>> exps;
-        exps.emplace_back(std::move(expInit));
-
-        while(!exps.empty())
-        {
-            std::vector<std::unique_ptr<Expression>> nextExps;
-            for(const auto& exp : exps)
-            {
-                for(auto& nextExp : exp->next())
-                {
-                    if(nextExp->isValid())
-                    {
-                        if(nextExp->a() * nextExp->b() == nextExp->r() && nextExp->isFinished())
-                        {
-                            std::fprintf(stdout, "%lu * %lu = %lu\n", nextExp->a(), nextExp->b(), nextExp->r());
-                        }
-                        else
-                        {
-                            nextExps.emplace_back(std::move(nextExp));
-                        }
-                    }
-                }
-            }
-            exps.clear();
-            exps.swap(nextExps);
-        }
-    }
-}
 } // namespace code
 
 int main(int argc, const char* argv[])
@@ -266,7 +214,8 @@ int main(int argc, const char* argv[])
 
     const std::string filename(argv[1]);
     auto loader = std::make_unique<code::DataLoader>(filename);
-    loader->load(std::string("([A-Z]+) \\* ([A-Z]+) = ([A-Z]+)\n?"), [](const std::vector<std::string>& words) { code::handle(words); });
-
+    code::Solution solution;
+    loader->load(std::string("([A-Z]+) \\* ([A-Z]+) = ([A-Z]+)\n?"),
+                 [&solution](const std::vector<std::string>& words) { solution.process(words); });
     return 0;
 }

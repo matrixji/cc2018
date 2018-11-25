@@ -12,6 +12,7 @@
 #include <sstream>
 #include <string>
 #include <unordered_map>
+#include <unordered_set>
 #include <vector>
 
 namespace code
@@ -81,7 +82,7 @@ class Solution
 {
 public:
     explicit Solution(size_t n)
-    : nodeCount{n + extraNodeCount}, linkLimit{nodeCount * nodeCount}, linkHeads(nodeCount, invalid), links(linkLimit, {0, 0, 0, 0}), tIndex{n + 1}
+    : nodeCount{n + extraNodeCount}, linkLimit{(nodeCount * nodeCount) << 1}, linkHeads(nodeCount, invalid), links(linkLimit, {0, 0, 0, 0}), tIndex{n + 1}
     {
     }
 
@@ -92,29 +93,67 @@ public:
         {
             auto it = words.begin();
             ++tempIndex;
-            auto value = static_cast<int32_t>(std::strtol(it->c_str(), nullptr, 10));
+            auto value = static_cast<ssize_t>(std::strtol(it->c_str(), nullptr, 10));
             it++;
+            std::vector<size_t> deps;
+            deps.reserve(words.size() - 1);
 
-            if(value > 0)
-            {
-                link(sIndex, tempIndex, static_cast<size_t>(value));
-                valueSum += value;
-            }
-            else
-            {
-                link(tempIndex, tIndex, static_cast<size_t>(-value));
-            }
             while(it != words.end())
             {
                 auto depIndex = static_cast<size_t>(std::strtoul(it->c_str(), nullptr, 10));
-                link(tempIndex, depIndex, infinity);
+                deps.emplace_back(depIndex);
                 ++it;
+            }
+
+            bool merged = false;
+            for(auto& n : nodes)
+            {
+                if(tryMerge(n.second, tempIndex, value, deps))
+                {
+                    merged = true;
+                    break;
+                }
+            }
+            if(!merged)
+            {
+                Node node;
+                node.value = value;
+                node.features.emplace(tempIndex);
+                for(const auto dep : deps)
+                {
+                    node.deps.emplace(dep);
+                }
+                nodes.emplace(tempIndex, node);
+            }
+        }
+    }
+
+    void prepareLink()
+    {
+        for(const auto& node : nodes)
+        {
+            if(node.second.value > 0)
+            {
+                link(sIndex, node.first, static_cast<size_t>(node.second.value));
+                valueSum += node.second.value;
+            }
+            else
+            {
+                link(node.first, tIndex, static_cast<size_t>(-node.second.value));
+            }
+            for(const auto dep : node.second.deps)
+            {
+                if(nodes.find(dep) != nodes.end())
+                {
+                    link(node.first, dep, infinity);
+                }
             }
         }
     }
 
     void process()
     {
+        prepareLink();
         auto minimalCut = resolveMinimalCut();
         if(valueSum <= minimalCut)
         {
@@ -134,6 +173,12 @@ public:
     }
 
 private:
+    using Node = struct
+    {
+        ssize_t value;
+        std::unordered_set<size_t> features;
+        std::unordered_set<size_t> deps;
+    };
     using Link = struct
     {
         size_t begin;
@@ -141,6 +186,37 @@ private:
         size_t capacity;
         size_t next;
     };
+
+    bool tryMerge(Node& a, size_t newFeature, ssize_t value, std::vector<size_t>& deps)
+    {
+        bool match = false;
+        for(const auto feature : a.features)
+        {
+            for(const auto dep : deps)
+            {
+                if(feature == dep)
+                {
+                    match = true;
+                    break;
+                }
+            }
+            if(match)
+            {
+                break;
+            }
+        }
+        if(match && (a.deps.find(newFeature) != a.deps.end()))
+        {
+            a.features.emplace(newFeature);
+            a.value += value;
+            if(a.deps.size() < nodeCount - extraNodeCount)
+            {
+                std::for_each(deps.begin(), deps.end(), [&a](const auto& dep) { a.deps.emplace(dep); });
+            }
+            return true;
+        }
+        return false;
+    }
 
     void link(size_t from, size_t to, size_t weight)
     {
@@ -254,7 +330,10 @@ private:
 
     void enumerateSelectedNodes(size_t curr, std::set<size_t>& selected)
     {
-        selected.emplace(curr);
+        for(const auto f : nodes[curr].features)
+        {
+            selected.emplace(f);
+        }
         auto index = linkHeads[curr];
         while(index != invalid)
         {
@@ -273,6 +352,7 @@ private:
     std::vector<size_t> linkHeads;
     std::unordered_map<size_t, size_t> nodeDepthes;
     std::vector<Link> links;
+    std::unordered_map<size_t, Node> nodes;
 
     size_t tempIndex{0};
     size_t sIndex{0};
